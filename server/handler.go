@@ -11,20 +11,27 @@ import (
 
 func handleGetLastTradePrice(w http.ResponseWriter, r *http.Request) {
 	log.Println("Getting last TradePrice")
-	buf, _ := ioutil.ReadAll(r.Body)
-	soapEnvelopeRequest := new(stockquote.SOAPEnvelope)
-	soapRequest := new(stockquote.TradePriceRequest)
-	soapEnvelopeRequest.Body = stockquote.SOAPBody{Content: soapRequest}
+	if buf, err := ioutil.ReadAll(r.Body); err != nil {
+		log.Println("There was an error in reading the request!", err)
+	} else {
+		soapEnvelopeRequest := new(stockquote.SOAPEnvelope)
+		soapRequest := new(stockquote.TradePriceRequest)
+		soapEnvelopeRequest.Body = stockquote.SOAPBody{Content: soapRequest}
 
-	xml.Unmarshal(buf, soapEnvelopeRequest)
+		if err = xml.Unmarshal(buf, soapEnvelopeRequest); err != nil {
+			log.Println("There was an error in parsing the request!", err)
+		}
 
-	soapEnvelopeResponse := new(stockquote.SOAPEnvelope)
-	soapResponse := new(stockquote.TradePrice)
-	soapResponse.Price = 5.0
-	soapEnvelopeResponse.Body = stockquote.SOAPBody{Content: soapResponse}
+		soapEnvelopeResponse := new(stockquote.SOAPEnvelope)
+		soapResponse := new(stockquote.TradePrice)
+		soapResponse.Price = 5.0
+		soapEnvelopeResponse.Body = stockquote.SOAPBody{Content: soapResponse}
 
-	encoder := xml.NewEncoder(w)
-	encoder.Encode(soapEnvelopeResponse)
+		encoder := xml.NewEncoder(w)
+		if err = encoder.Encode(soapEnvelopeResponse); err != nil {
+			log.Println("There was an error in writing the response!", err)
+		}
+	}
 }
 
 func handlePostStockquote(w http.ResponseWriter, r *http.Request) {
