@@ -24,8 +24,20 @@ func handleGetLastTradePrice(w http.ResponseWriter, r *http.Request) {
 
 		soapEnvelopeResponse := new(stockquote.SOAPEnvelope)
 		soapResponse := new(stockquote.TradePrice)
-		soapResponse.Price = 5.0
-		soapEnvelopeResponse.Body = stockquote.SOAPBody{Content: soapResponse}
+		var soapFault *stockquote.SOAPFault
+
+		switch ts := soapRequest.TickerSymbol; ts {
+		case "SIE":
+			soapResponse.Price = 5.0
+		default:
+			soapFault = new(stockquote.SOAPFault)
+			soapFault.Detail = "Unknown TickerSymbol: " + ts
+		}
+		if soapFault == nil {
+			soapEnvelopeResponse.Body = stockquote.SOAPBody{Content: soapResponse}
+		} else {
+			soapEnvelopeResponse.Body = stockquote.SOAPBody{Fault: soapFault}
+		}
 
 		encoder := xml.NewEncoder(w)
 		if err = encoder.Encode(soapEnvelopeResponse); err != nil {
